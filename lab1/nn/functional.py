@@ -8,9 +8,7 @@ class Sigmoid(Module):
 
         # TODO Implement forward propogation
         # of sigmoid function.
-
         ...
-
         # End of todo
 
     def backward(self, dy):
