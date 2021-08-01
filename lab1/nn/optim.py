@@ -20,13 +20,6 @@ class Optim(object):
         ...
         # 其实这里采用的是adam方法
         
-        """
-        dflsgdfmhlj
-        gjodf;hml;g,k
-        jfhmo;j;
-        """
-
-        # ijhdspjgsodhpm
 
         # End of todo
 
