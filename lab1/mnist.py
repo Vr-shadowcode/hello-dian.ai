@@ -1,10 +1,11 @@
+from nn.modules import Conv2d, Linear, MaxPool
+from typing import OrderedDict
 import numpy as np
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
 import nn
 import nn.functional as F
-
 
 n_features = 28 * 28
 n_classes = 10
@@ -19,7 +20,43 @@ class Model(nn.Module):
     # TODO Design the classifier.
 
     ...
+    def __init__(self,n_features,hidden_size,output_size):
+        #########
+        # 卷积层
+        # 初始化权重
+        self.conv_parms = {}
+        # 卷积层
+        # self.conv_parms['filter_num'] = 1
+        # self.conv_parms['filter_size'] = 3
+        # self.conv_parms['filter_stride'] = 1
+        # self.conv_parms['filter_padding'] = 0
+        input_size = np.sqrt(n_features)
 
+        self.parms={}
+        self.parms['W1'] = list(1,1)
+        # self.parms['b1'] = np.zeros(1)
+        
+        self.layers = OrderedDict()
+
+        self.layers['Conv2d'+ str(1)] = Conv2d(self.parms['W'+str(1)])
+        self.layers['Relu'] = F.ReLU()
+        self.layers['MaxPool'] = MaxPool()
+
+
+    def forward(self,X):
+        # X = X.reshape(28,-1)
+        for layer in self.layers.values:
+            X = layer.foward(X)
+        return X
+
+    def backward(self,dout):
+        # 反向传播
+        # 利用列表的反向特性，实现数据在神经网络的反向传播
+        layers = list(self.layers.values())
+        layers.reverse()
+        for layer in layers:
+            dout = layer.backward(dout)
+ 
     # End of todo
 
 
@@ -31,7 +68,6 @@ def load_mnist(mode='train', n_samples=None):
     X = np.fromfile(open(images), np.uint8)[16:].reshape((length, 28, 28)).astype(np.int32)
     y = np.fromfile(open(labels), np.uint8)[8:].reshape((length)).astype(np.int32)
     return (X[:n_samples].reshape(n_samples, -1), y[:n_samples]) if n_samples is not None else (X.reshape(length, -1), y)
-
 
 def vis_demo(model):
     X, y = load_mnist('test', 20)
