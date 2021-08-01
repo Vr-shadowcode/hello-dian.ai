@@ -17,8 +17,16 @@ class Optim(object):
         # if is `Tensor`, call `self._update_weight()`,
         # else if is `Module` or `List` of `Module`,
         # call `self._step_module()` recursively.
-
         ...
+        # 其实这里采用的是adam方法
+        
+        """
+        dflsgdfmhlj
+        gjodf;hml;g,k
+        jfhmo;j;
+        """
+
+        # ijhdspjgsodhpm
 
         # End of todo
 
