@@ -26,15 +26,17 @@ class Model(nn.Module):
         self.original_shape = (np.sqrt(n_features),np.sqrt(n_features))  # (28,28)
         self.BN = True
         self.Conv2d = True
-        self.pool = MaxPool
-        self.dropout = True
+        self.pool = MaxPool()
+        self.dropout = nn.modules.Dropout()
 
         if self.Conv2d is True:
-            self.convlayer = [BatchNorm1d(self.original_shape[0]**2),
+            self.convlayer = [BatchNorm1d(int(self.original_shape[0]*self.original_shape[1])),
                             Conv2d(1,1),  # 初始化输入是单通道，卷积核个数是1
                             ReLU(),
                             MaxPool()]   
-            self.layer = [Linear(),
+            self.layer = [Linear(169,512),
+                          nn.functional.Sigmoid(),
+                          Linear(512,10),
                           nn.functional.Sigmoid()]
         else:
             self.layer = [Linear(shape[0],shape[1]),nn.functional.Sigmoid(),
@@ -43,24 +45,25 @@ class Model(nn.Module):
         # self.update_num = [0,1,1]
 
         
-    def forward(self,x: np.ndarray) -> np.ndarray:
+    def forward(self,x: np.ndarray) -> np.ndarray: 
+        print(x.shape)
         self.input = x
-        x = np.expand_dims(self.convlayer[0].forward(x).reshape(-1,*self.original_shape),1)
-        for layer in range(1,len(self.convlayer)):
-            x = self.convlayer[layer].foward(x)
-        
-        x = np.squeeze(x.reshape(x.reshape[:-2],-1))
+        x = np.expand_dims(self.convlayer[0].forward(x).reshape(-1,28,28),1)
+        print(x.shape)
+        for i in range(1,len(self.convlayer)):
+            x = self.convlayer[i].forward(x)
+            print(x.shape)
+        x = np.squeeze(x.reshape(x.shape[0]*x.shape[1],-1))
 
         for layer in self.layer:
-            for function in layer:
-                x = function.forward(x)
+                x = layer.forward(x)
         x = self.dropout(x)
 
         return x
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
-        for layer in self.layer:
-            layer[0].tensor.grad = np.zeros(layer[0].tensor.shape)
+        # for layer in self.layer:
+        #     layer.tensor.grad = np.zeros(layer.tensor.shape)
 
         if self.Conv2d:
             layer = [self.convlayer,self.layer]
@@ -79,8 +82,8 @@ class Model(nn.Module):
 # lab1\train-images.idx3-ubyte
 
 def load_mnist(mode='train', n_samples=None):
-    images = 'train-images-idx3-ubyte' if mode == 'train' else 't10k-images-idx3-ubyte'
-    labels = 'train-labels-idx1-ubyte' if mode == 'train' else 't10k-labels-idx1-ubyte'
+    images = 'lab1/train-images.idx3-ubyte' if mode == 'train' else 'lab1/t10k-images.idx3-ubyte'
+    labels = 'lab1/train-labels.idx1-ubyte' if mode == 'train' else 'lab1/t10k-labels.idx1-ubyte'
     length = 60000 if mode == 'train' else 10000
 
     X = np.fromfile(open(images), np.uint8)[16:].reshape((length, 28, 28)).astype(np.int32)

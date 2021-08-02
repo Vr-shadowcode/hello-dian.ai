@@ -9,7 +9,8 @@ class Sigmoid(Module):
         # TODO Implement forward propogation
         # of sigmoid function.
         ...
-        out = 1 / (1 + np.exp(-x))
+        # x = x - np.max(x,axis=0)
+        out = np.array(1.0 / (1.0 + np.exp(-x)))
         self.out = out
         return out
         # End of todo
@@ -53,11 +54,11 @@ class ReLU(Module):
         # TODO Implement forward propogation
         # of ReLU function.
         ...
-        self.mask = (x <= 0)
-        out = x.copy
+        self.x = (x <= 0)
+        self.value = x
         # 将x<0的初始化为0
-        out[self.mask] = 0
-        return out
+        self.value[self.x] = 0
+        return self.value
         # End of todo
 
     def backward(self, dy):
@@ -66,7 +67,7 @@ class ReLU(Module):
         # of ReLU function.
         ...
         # 小于0的位置，反向传播的误差为0
-        dy[self.mask] = 0
+        dy[self.x] = 0
         dx = dy
         return dx
         # End of todo
@@ -131,7 +132,7 @@ class SoftmaxLoss(Loss):
 
         # TODO Calculate softmax loss.
         ...
-        self.probs = Softmax(probs)
+        self.probs = Softmax.forward(probs)
         self.targets = targets
         self.loss = CrossEntropyLoss(self.probs,self.targets)
         # self.dp = None
@@ -160,18 +161,22 @@ class CrossEntropyLoss(Loss):
     def __call__(self, probs, targets):
 
         # TODO Calculate cross-entropy loss.
-        self.probs = Softmax(probs)
         if probs.ndim == 1:
             self.probs = probs.reshape(1,probs.size)
             self.targets = targets.reshape(1,targets.size)
 
-        if probs.size == targets.size:
-            self.targets = targets.argmax(axis=1)
+        self.probs = probs
+        self.targets = targets
 
+        # self.probs = Softmax.forward(probs)
         batch_size = self.probs.shape[0]
+        if probs.size == targets.size:
+            # self.targets = targets.argmax(axis=1)
+            self.loss = -sum(self.targets * np.log(self.probs + 1e-7)) / batch_size
+        else:
+            self.loss = -np.sum(np.log(self.probs[np.arange(batch_size),targets] + 1e-7)) / batch_size
 
-        self.loss = -np.sum(np.log(self.probs[np.arange(batch_size),targets] + 1e-7)) / batch_size
-
+        return self
         # End of todo
 
     def backward(self):
@@ -187,7 +192,7 @@ class CrossEntropyLoss(Loss):
 
         else:
             dx = self.probs.copy()
-            dx[np.arange(batch_size,self.targets)] -= 1
+            dx[np.arange(batch_size),self.targets] -= 1
             dx = dx / batch_size
         return dx
         # End of todo

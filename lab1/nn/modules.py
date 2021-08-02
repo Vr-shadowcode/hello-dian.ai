@@ -91,11 +91,13 @@ class Linear(Module):
 
         
         self.original_x_shape = x.shape
-
+        # print(x.shape)
         v = np.ones(x.shape[0])
         x = np.column_stack([x,v])
 
         self.x = x
+        # print(x.shape)
+        # print(self.w.shape)
         out = np.dot(x,self.w) 
         
         return out
@@ -141,7 +143,7 @@ class BatchNorm1d(Module):
         # TODO Initialize the attributes
         # of 1d batchnorm module.
         ...
-        self.L = length
+        self.L = int(length)
         self.running_mean = np.zeros(self.L)  # 追踪mini-batch 均值
         self.running_var = np.ones(self.L)   # 追踪mini-batch 方差
         self.eps = 1e-5  # 排除计算错误和分母为0的情况
@@ -228,9 +230,9 @@ class Conv2d(Module):
         self.kernel_size = kernel_size
         # self.n_filters = C_out
         self.W = nn.tensor.from_array(np.random.randn(self.C_in,self.C_out,self.kernel_size,self.kernel_size))
-        self.W.grad = np.zeros(self.kernel_size,self.kernel_size)
+        self.W.grad = np.zeros((self.kernel_size,self.kernel_size))
         self.W_im2col = None
-        self.b = nn.tensor.from_array(np.zeros(1,self.C_out))
+        self.b = nn.tensor.from_array(np.zeros((1,self.C_out)))
         self.b.grad = np.zeros((1,self.C_out))
         self.stride = stride
         self.padding = padding
@@ -265,8 +267,9 @@ class Conv2d(Module):
 
         # 调用Conv2d_im2col对x进行拉伸
         # x:(B,C_in,H_in,W_in) -> (B*H_out*W_out,C_in*FH*FW)
-        #                      -> (B*H_out*W_out,C_in*kernel_size*kernel_size)                      
-        self.X_im2col = Conv2d_im2col().forward(self,self.x)
+        #                      -> (B*H_out*W_out,C_in*kernel_size*kernel_size)      
+        x_padded = np.pad(x,((0,0),(0,0),(self.padding,self.padding),(self.padding,self.padding)),'constant')                
+        self.X_im2col = Conv2d_im2col.forward(self,x_padded)
 
         # self.W也要进行拉伸，变成二维
         # self.W:(C_in,C_out,self.kernel_size,self.kernel_size) ->  (FH*FW*C_in,FN)
@@ -293,7 +296,7 @@ class Conv2d(Module):
         # TODO Implement backward propogation
         # of 2d convolution module.
         ...
-        dy = dy.transpose(0,2,3,1).reshape(-1,self.C_out)
+        dy = dy.transpose(0,2,3,1).reshape(-1,self.out_channels)
 
         self.W.grad = np.dot(self.X_im2col.T,dy).transpose(1,0).reshape(self.W.shape)
         self.b.grad = np.sum(dy,axis=1,keepdims=True)
@@ -321,11 +324,11 @@ class Conv2d_im2col(Conv2d):
         # TODO Implement forward propogation of
         # 2d convolution module using im2col method.
         ...
-
+        """
         batch_size,C_in,height,width = x.shape
         filter_height,filter_width = self.kernel_size
-        pad_h,pad_w = int((filter_height - 1) / 2),int((filter_width-1) / 2)
-        x_padded = np.pad(x,((0,0),(0,0),pad_h,pad_w),mode='constant')
+        # pad_h,pad_w = int((filter_height - 1) / 2),int((filter_width-1) / 2)
+        # x_padded = np.pad(x,((0,0),(0,0),pad_h,pad_w),mode='constant')
         out_height = int((height+2*pad_h-filter_height)/ self.stride - 1)
         out_width = int((width+2*pad_w-filter_width)/ self.stride - 1)
 
@@ -353,6 +356,15 @@ class Conv2d_im2col(Conv2d):
         im_col = im_col.reshape(-1,filter_width*filter_height*C_in)
 
         return im_col
+        """
+        B,iC,iH,iW = x.shape
+        p,s,k = self.padding,self.stride,self.kernel_size
+        oH,oW = (iH-k) // s + 1,(iW-k) // s + 1
+        col = np.zeros((B,iC,k,k,oH,oW))
+        for h in np.arange(k):
+            for w in np.arange(k):
+                col[:,:,h,w,:,:] = x[:,:,h:h+s*oH:s,w:w+s*oW:s]
+        return col.transpose(0,4,5,1,2,3).reshape(B*oH*oW,-1)
 
         # End of todo
 
@@ -466,14 +478,14 @@ class MaxPool(Module):
         ...
         B,C,H_in,W_in = x.shape
         self.x = x
-        self.x_padded = np.pad(x,((0,0),(0,0),self.padding,self.padding),mode='constant')
+        x_padded = np.pad(x,((0,0),(0,0),(self.padding,self.padding),(self.padding,self.padding)),mode='constant')
 
-        out_h = int((H_in+2*self.padding-self.kernel_size) / self.stride - 1)
-        out_w = int((W_in+2*self.padding-self.kernel_size) / self.stride - 1)
+        out_h = int((H_in+2*self.padding-self.kernel_size) / self.stride + 1)
+        out_w = int((W_in+2*self.padding-self.kernel_size) / self.stride + 1)
         self.out = np.zeros((B,C,out_h,out_w))
         for h in np.arange(out_h):
             for w in np.arange(out_w):
-                self.out[:,:,h,w] = np.max(self.x_padded[:,:
+                self.out[:,:,h,w] = np.max(x_padded[:,:,
                 self.stride*h:self.stride*h+self.kernel_size,self.stride*w:self.stride*w+self.kernel_size],axis=(-2,-1))
 
         return self.out
@@ -520,7 +532,7 @@ class Dropout(Module):
         # TODO Implement forward propogation
         # of dropout module.
         ...
-        a = (np.random.rand(x.shape)) < self.p
+        a = (np.random.rand(*x.shape) < self.p) 
         a = a / self.p
 
         return a*x
