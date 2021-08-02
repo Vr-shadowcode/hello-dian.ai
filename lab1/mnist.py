@@ -1,11 +1,10 @@
-from lab1.nn.functional import ReLU, Sigmoid
-from lab1.nn.modules import BatchNorm1d
 import numpy as np
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
-from nn.modules import Conv2d, Linear, MaxPool,BatchNorm1d
-from typing import OrderedDict
+from nn.modules import Linear,BatchNorm1d,Conv2d,MaxPool
+from nn.functional import ReLU,Sigmoid
+# from typing import OrderedDict
 
 import nn
 import nn.functional as F
@@ -41,10 +40,10 @@ class Model(nn.Module):
             self.layer = [Linear(shape[0],shape[1]),nn.functional.Sigmoid(),
                          Linear(shape[1],shape[2]),nn.functional.Sigmoid(),
                          ]
-        self.update_num = [0,1,1]
+        # self.update_num = [0,1,1]
 
         
-    def forward(self,x):
+    def forward(self,x: np.ndarray) -> np.ndarray:
         self.input = x
         x = np.expand_dims(self.convlayer[0].forward(x).reshape(-1,*self.original_shape),1)
         for layer in range(1,len(self.convlayer)):
@@ -52,20 +51,36 @@ class Model(nn.Module):
         
         x = np.squeeze(x.reshape(x.reshape[:-2],-1))
 
-        for layer in range(len(self.layer)):
-            x = self.layer[layer].forward(x)
-
+        for layer in self.layer:
+            for function in layer:
+                x = function.forward(x)
         x = self.dropout(x)
 
-        return x[-1]
+        return x
 
-    def 
+    def backward(self, dy: np.ndarray) -> np.ndarray:
+        for layer in self.layer:
+            layer[0].tensor.grad = np.zeros(layer[0].tensor.shape)
+
+        if self.Conv2d:
+            layer = [self.convlayer,self.layer]
+        else:
+            layer = self.layer
+
+        for i in range(2,len(layer[-1]) + 1):
+            dout = self.layer[-1][-i].backward(dy)
+        
+        for i in range(2,len(layer)+1):
+            for j in range(1,len(layer[-i]) + 1):
+                dout = layer[-i][-j].backward(dout)
+
+        return dout
     # End of todo
-
+# lab1\train-images.idx3-ubyte
 
 def load_mnist(mode='train', n_samples=None):
-    images = './train-images-idx3-ubyte' if mode == 'train' else './t10k-images-idx3-ubyte'
-    labels = './train-labels-idx1-ubyte' if mode == 'train' else './t10k-labels-idx1-ubyte'
+    images = 'train-images-idx3-ubyte' if mode == 'train' else 't10k-images-idx3-ubyte'
+    labels = 'train-labels-idx1-ubyte' if mode == 'train' else 't10k-labels-idx1-ubyte'
     length = 60000 if mode == 'train' else 10000
 
     X = np.fromfile(open(images), np.uint8)[16:].reshape((length, 28, 28)).astype(np.int32)
