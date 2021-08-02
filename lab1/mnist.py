@@ -1,8 +1,11 @@
-from nn.modules import Conv2d, Linear, MaxPool
-from typing import OrderedDict
+from lab1.nn.functional import ReLU, Sigmoid
+from lab1.nn.modules import BatchNorm1d
 import numpy as np
 from matplotlib import pyplot as plt
 from tqdm import tqdm
+
+from nn.modules import Conv2d, Linear, MaxPool,BatchNorm1d
+from typing import OrderedDict
 
 import nn
 import nn.functional as F
@@ -18,45 +21,45 @@ lengths = (n_features, 512, n_classes)
 class Model(nn.Module):
 
     # TODO Design the classifier.
-
     ...
-    def __init__(self,n_features,hidden_size,output_size):
-        #########
-        # 卷积层
-        # 初始化权重
-        self.conv_parms = {}
-        # 卷积层
-        # self.conv_parms['filter_num'] = 1
-        # self.conv_parms['filter_size'] = 3
-        # self.conv_parms['filter_stride'] = 1
-        # self.conv_parms['filter_padding'] = 0
-        input_size = np.sqrt(n_features)
+    def __init__(self,shape):
+        self.shape = list(shape)
+        self.original_shape = (np.sqrt(n_features),np.sqrt(n_features))  # (28,28)
+        self.BN = True
+        self.Conv2d = True
+        self.pool = MaxPool
+        self.dropout = True
 
-        self.parms={}
-        self.parms['W1'] = list(1,1)
-        # self.parms['b1'] = np.zeros(1)
+        if self.Conv2d is True:
+            self.convlayer = [BatchNorm1d(self.original_shape[0]**2),
+                            Conv2d(1,1),  # 初始化输入是单通道，卷积核个数是1
+                            ReLU(),
+                            MaxPool()]   
+            self.layer = [Linear(),
+                          nn.functional.Sigmoid()]
+        else:
+            self.layer = [Linear(shape[0],shape[1]),nn.functional.Sigmoid(),
+                         Linear(shape[1],shape[2]),nn.functional.Sigmoid(),
+                         ]
+        self.update_num = [0,1,1]
+
         
-        self.layers = OrderedDict()
+    def forward(self,x):
+        self.input = x
+        x = np.expand_dims(self.convlayer[0].forward(x).reshape(-1,*self.original_shape),1)
+        for layer in range(1,len(self.convlayer)):
+            x = self.convlayer[layer].foward(x)
+        
+        x = np.squeeze(x.reshape(x.reshape[:-2],-1))
 
-        self.layers['Conv2d'+ str(1)] = Conv2d(self.parms['W'+str(1)])
-        self.layers['Relu'] = F.ReLU()
-        self.layers['MaxPool'] = MaxPool()
+        for layer in range(len(self.layer)):
+            x = self.layer[layer].forward(x)
 
+        x = self.dropout(x)
 
-    def forward(self,X):
-        # X = X.reshape(28,-1)
-        for layer in self.layers.values:
-            X = layer.foward(X)
-        return X
+        return x[-1]
 
-    def backward(self,dout):
-        # 反向传播
-        # 利用列表的反向特性，实现数据在神经网络的反向传播
-        layers = list(self.layers.values())
-        layers.reverse()
-        for layer in layers:
-            dout = layer.backward(dout)
- 
+    def 
     # End of todo
 
 
