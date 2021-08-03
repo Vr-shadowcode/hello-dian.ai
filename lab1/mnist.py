@@ -70,8 +70,8 @@ class Model(nn.Module):
         else:
             layer = self.layer
 
-        for i in range(2,len(layer[-1]) + 1):
-            dout = self.layer[-1][-i].backward(dy)
+        for i in range(2,len(layer[-2]) + 1):
+            dout = self.layer[-i].backward(dy)
         
         for i in range(2,len(layer)+1):
             for j in range(1,len(layer[-i]) + 1):

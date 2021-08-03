@@ -325,13 +325,13 @@ class Conv2d_im2col(Conv2d):
         # 2d convolution module using im2col method.
         ...
         batch_size,C_in,height,width = x.shape
-        filter_height,filter_width = self.kernel_size
+        filter_height,filter_width = self.kernel_size,self.kernel_size
         pad_h,pad_w = int((filter_height - 1) / 2),int((filter_width-1) / 2)
-        x_padded = np.pad(x,((0,0),(0,0),pad_h,pad_w),mode='constant')
+        x_padded = np.pad(x,((0,0),(0,0),(pad_h,pad_h),(pad_w,pad_w)),mode='constant')
         out_height = int((height+2*pad_h-filter_height)/ self.stride - 1)
         out_width = int((width+2*pad_w-filter_width)/ self.stride - 1)
 
-        i0 = np.repeat(np.arange((filter_height),filter_width))
+        i0 = np.repeat(np.arange(filter_height),filter_width)
         i0 = np.tile(i0,C_in)
         i1 = self.stride * np.repeat(np.arange(out_height),out_width)
         j0 = np.tile(np.arange(filter_width),filter_width * C_in)
