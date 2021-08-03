@@ -18,7 +18,6 @@ class Optim(object):
         # else if is `Module` or `List` of `Module`,
         # call `self._step_module()` recursively.
         ...
-        # 其实这里采用的是adam方法
         if isinstance(module,Module):
             for i in range(len(module.layer)):
                 self._update_weight(module.layer[i].tensor)
