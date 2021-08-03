@@ -268,8 +268,8 @@ class Conv2d(Module):
         # 调用Conv2d_im2col对x进行拉伸
         # x:(B,C_in,H_in,W_in) -> (B*H_out*W_out,C_in*FH*FW)
         #                      -> (B*H_out*W_out,C_in*kernel_size*kernel_size)      
-        x_padded = np.pad(x,((0,0),(0,0),(self.padding,self.padding),(self.padding,self.padding)),'constant')                
-        self.X_im2col = Conv2d_im2col.forward(self,x_padded)
+        # x_padded = np.pad(x,((0,0),(0,0),(self.padding,self.padding),(self.padding,self.padding)),'constant')                
+        self.X_im2col = Conv2d_im2col.forward(self,x)
 
         # self.W也要进行拉伸，变成二维
         # self.W:(C_in,C_out,self.kernel_size,self.kernel_size) ->  (FH*FW*C_in,FN)
@@ -324,11 +324,10 @@ class Conv2d_im2col(Conv2d):
         # TODO Implement forward propogation of
         # 2d convolution module using im2col method.
         ...
-        """
         batch_size,C_in,height,width = x.shape
         filter_height,filter_width = self.kernel_size
-        # pad_h,pad_w = int((filter_height - 1) / 2),int((filter_width-1) / 2)
-        # x_padded = np.pad(x,((0,0),(0,0),pad_h,pad_w),mode='constant')
+        pad_h,pad_w = int((filter_height - 1) / 2),int((filter_width-1) / 2)
+        x_padded = np.pad(x,((0,0),(0,0),pad_h,pad_w),mode='constant')
         out_height = int((height+2*pad_h-filter_height)/ self.stride - 1)
         out_width = int((width+2*pad_w-filter_width)/ self.stride - 1)
 
@@ -365,6 +364,7 @@ class Conv2d_im2col(Conv2d):
             for w in np.arange(k):
                 col[:,:,h,w,:,:] = x[:,:,h:h+s*oH:s,w:w+s*oW:s]
         return col.transpose(0,4,5,1,2,3).reshape(B*oH*oW,-1)
+        """
 
         # End of todo
 
