@@ -17,7 +17,9 @@ class Optim(object):
         # if is `Tensor`, call `self._update_weight()`,
         # else if is `Module` or `List` of `Module`,
         # call `self._step_module()` recursively.
-        ...
+        ...  
+        # 反向传播看作一张图，每层的参数都会进行反向传播求出每层参数的梯度,
+        # 调用optim可以进行梯度优化算法将梯度用于计算后每层的参数都会更新的新的值
         if isinstance(module,Module):
             for i in range(len(module.layer)):
                 self._update_weight(module.layer[i].tensor)
